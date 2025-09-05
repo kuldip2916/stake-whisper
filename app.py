@@ -14,17 +14,32 @@ def get_rag_response_from_bigquery(question: str):
     Sends a question to BigQuery, runs the RAG SQL query, and returns the answer.
     """
     try:
-        # Load credentials from Streamlit secrets
-        credentials_dict = json.loads(st.secrets["GOOGLE_APPLICATION_CREDENTIALS"])
-        
-        # Create credentials object
-        credentials = service_account.Credentials.from_service_account_info(
-            credentials_dict,
-            scopes=["https://www.googleapis.com/auth/cloud-platform"]
-        )
-        
+        # Prefer credentials from Streamlit secrets if available
+        credentials = None
+        if "gcp_service_account" in st.secrets:
+            # Best practice: store service account as a TOML table in secrets
+            sa_info = dict(st.secrets["gcp_service_account"])  # already a dict, no json.loads
+            credentials = service_account.Credentials.from_service_account_info(
+                sa_info,
+                scopes=["https://www.googleapis.com/auth/cloud-platform"],
+            )
+        elif "GOOGLE_APPLICATION_CREDENTIALS" in st.secrets:
+            # If stored as a JSON string, ensure newlines in private_key are escaped (\n)
+            sa_json = st.secrets["GOOGLE_APPLICATION_CREDENTIALS"]
+            sa_info = json.loads(sa_json)
+            credentials = service_account.Credentials.from_service_account_info(
+                sa_info,
+                scopes=["https://www.googleapis.com/auth/cloud-platform"],
+            )
+        else:
+            # Fallback: local file
+            credentials = service_account.Credentials.from_service_account_file(
+                "google_credentials.json",
+                scopes=["https://www.googleapis.com/auth/cloud-platform"],
+            )
+
         # Initialize the BigQuery client with explicit credentials and project
-        project_id = "master-booster-469602-q2"  # Replace with your actual project ID if different
+        project_id = "master-booster-469602-q2"
         client = bigquery.Client(credentials=credentials, project=project_id)
 
         # IMPORTANT: Use query parameters to prevent SQL injection!
