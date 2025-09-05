@@ -5,7 +5,7 @@ from google.cloud import bigquery
 # --- Authentication Setup ---
 # Set the environment variable for Google Cloud credentials
 # This line points the BigQuery client to your service account key
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "GOOGLE_CREDENTIALS.json"
+os.environ["GOOGLE_CREDENTIALS"] = "GOOGLE_CREDENTIALS.json"
 
 # --- BigQuery Function ---
 # Encapsulate all the BigQuery logic in a function for clarity and reusability
