@@ -1,11 +1,11 @@
 import os
+import json
 import streamlit as st
 from google.cloud import bigquery
+from google.oauth2 import service_account
 
 # --- Authentication Setup ---
-# Set the environment variable for Google Cloud credentials
-# This line points the BigQuery client to your service account key
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "GOOGLE_CREDENTIALS.json"
+# Use Streamlit secrets to securely store and load the Google Cloud credentials
 
 # --- BigQuery Function ---
 # Encapsulate all the BigQuery logic in a function for clarity and reusability
@@ -14,8 +14,18 @@ def get_rag_response_from_bigquery(question: str):
     Sends a question to BigQuery, runs the RAG SQL query, and returns the answer.
     """
     try:
-        # Initialize the BigQuery client
-        client = bigquery.Client()
+        # Load credentials from Streamlit secrets
+        credentials_dict = json.loads(st.secrets["GOOGLE_APPLICATION_CREDENTIALS"])
+        
+        # Create credentials object
+        credentials = service_account.Credentials.from_service_account_info(
+            credentials_dict,
+            scopes=["https://www.googleapis.com/auth/cloud-platform"]
+        )
+        
+        # Initialize the BigQuery client with explicit credentials and project
+        project_id = "master-booster-469602-q2"  # Replace with your actual project ID if different
+        client = bigquery.Client(credentials=credentials, project=project_id)
 
         # IMPORTANT: Use query parameters to prevent SQL injection!
         # This is the secure way to pass user input into a query.
@@ -110,4 +120,3 @@ if st.button("Get Answer"):
             st.markdown(answer)
     else:
         st.warning("Please enter a question.")
-
