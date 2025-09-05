@@ -6,7 +6,7 @@ from google.oauth2 import service_account
 
 # --- Authentication Setup ---
 # Use Streamlit secrets to securely store and load the Google Cloud credentials
-
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "google_credentials.json"
 # --- BigQuery Function ---
 # Encapsulate all the BigQuery logic in a function for clarity and reusability
 def get_rag_response_from_bigquery(question: str):
