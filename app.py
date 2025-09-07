@@ -82,7 +82,7 @@ def get_rag_response_from_bigquery(question: str):
           prompt_generation AS (
             SELECT
               CONCAT(
-                'You are an expert developer assistant. Your task is to answer the user''s question based STRICTLY and ONLY on the numbered context provided below. Do not use any other knowledge.\n',
+                'You are an expert developer assistant. Your task is to answer the user' 's question based STRICTLY and ONLY on the numbered context provided below. Do not use any other knowledge.\n',
                 'Provide your answer in CLEAR MARKDOWN FORMAT.\n',
                 'The answer must include:\n',
                 '1. A one-sentence **Summary** of the solution.\n',
