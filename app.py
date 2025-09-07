@@ -7,8 +7,10 @@ from google.oauth2 import service_account
 # --- Authentication Setup ---
 # Use Streamlit secrets to securely store and load the Google Cloud credentials
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "google_credentials.json"
+
 # --- BigQuery Function ---
 # Encapsulate all the BigQuery logic in a function for clarity and reusability
+
 def get_rag_response_from_bigquery(question: str):
     """
     Sends a question to BigQuery, runs the RAG SQL query, and returns the answer.
@@ -52,37 +54,56 @@ def get_rag_response_from_bigquery(question: str):
 
         # Your final, working SQL query, with a placeholder @new_question
         # for the user's input.
-        sql_query = """
-        WITH question_embedding AS (
-          SELECT
-            p.ml_generate_embedding_result AS embedding
-          FROM
-            ML.GENERATE_EMBEDDING(
-              MODEL `master-booster-469602-q2.kaggle.text_embedding_model`,
-              (SELECT @new_question AS content)
-            ) AS p
-        ),
-        prompt_generation AS (
-          SELECT
-            CONCAT(
-              'You are a helpful expert Python programmer. Answer the following question based ONLY on the context provided. Provide a clear, actionable solution with code examples. \\n\\n',
-              'CONTEXT: \\n',
-              IFNULL(STRING_AGG(retrieved_solutions.base.resolution_text, '\\n---\\n'), 'No relevant context found.'),
-              '\\n\\nQUESTION: ',
-              @new_question
-            ) AS prompt
-          FROM (
-            SELECT base
-            FROM VECTOR_SEARCH(
-              TABLE `master-booster-469602-q2.kaggle.stackoverflow_with_embeddings`,
-              'embedding',
-              (SELECT embedding FROM question_embedding),
-              top_k => 3
-            )
-          ) AS retrieved_solutions
-        )
+        sql_query = sql_query = """
+        WITH
+          question_embedding AS (
+            SELECT
+              p.ml_generate_embedding_result AS embedding
+            FROM
+              ML.GENERATE_EMBEDDING(
+                MODEL `master-booster-469602-q2.kaggle.text_embedding_model`,
+                (SELECT @new_question AS content)
+              ) AS p
+          ),
+          retrieved_matches AS (
+            SELECT
+              base.ticket_id,
+              base.problem_description as question,
+              base.resolution_text AS answer,
+              distance
+            FROM
+              VECTOR_SEARCH(
+                TABLE `master-booster-469602-q2.kaggle.stackoverflow_with_embeddings`,
+                'embedding',
+                (SELECT embedding FROM question_embedding),
+                top_k => 3
+              )
+          ),
+          prompt_generation AS (
+            SELECT
+              CONCAT(
+                'You are an expert developer assistant. Your task is to answer the user''s question based STRICTLY and ONLY on the numbered context provided below. Do not use any other knowledge.\n',
+                'Provide your answer in CLEAR MARKDOWN FORMAT.\n',
+                'The answer must include:\n',
+                '1. A one-sentence **Summary** of the solution.\n',
+                '2. A numbered list of **Solution Steps**.\n',
+                '3. A `python` formatted **Code Example** if applicable.\n',
+                '4. **Cite your sources**. At the end of any sentence that uses information from a source, add the source ID, like this: [Source ID: 12345].\n\n',
+                '---\n',
+                'CONTEXT:\n',
+                IFNULL(STRING_AGG(CONCAT('[Source ID: ', ticket_id, '] ', answer), '\n\n' ORDER BY distance ASC), 'No relevant context found.'),
+                '\n---\n',
+                'QUESTION: ',
+                @new_question
+              ) AS prompt
+            FROM
+              retrieved_matches
+          )
+
         SELECT
-          ml_generate_text_result.candidates[0].content.parts[0].text AS generated_answer
+          p.ml_generate_text_result.candidates[0].content.parts[0].text AS generated_answer,
+          p.ml_generate_text_result AS full_model_response,
+          (SELECT ARRAY_AGG(STRUCT(ticket_id, question, answer) ORDER BY distance ASC) FROM retrieved_matches) AS top_matches
         FROM
           ML.GENERATE_TEXT(
             MODEL `master-booster-469602-q2.kaggle.gemini`,
@@ -92,7 +113,7 @@ def get_rag_response_from_bigquery(question: str):
               0.5 AS temperature,
               0.95 AS top_p
             )
-          );
+          ) AS p;
         """
 
         # Execute the query
@@ -101,17 +122,26 @@ def get_rag_response_from_bigquery(question: str):
         # Wait for the job to complete and get the results
         results = query_job.result()
 
-        # Extract the first row and the 'generated_answer' column
+        # Extract the first row's data
         for row in results:
-            return row["generated_answer"]
+            return {
+                "generated_answer": row["generated_answer"],
+                "top_matches": row["top_matches"],
+                "full_model_response": row["full_model_response"]  # Optional, for debugging
+            }
         
         # If no rows are returned
-        return "Sorry, I could not generate an answer."
+        return {
+            "generated_answer": "Sorry, I could not generate an answer.",
+            "top_matches": []
+        }
 
     except Exception as e:
-        # Handle potential errors (e.g., API errors, no results)
         print(f"An error occurred: {e}")
-        return f"An error occurred while querying BigQuery: {e}"
+        return {
+            "generated_answer": f"An error occurred while querying BigQuery: {e}",
+            "top_matches": []
+        }
 
 
 # --- Streamlit User Interface ---
@@ -128,10 +158,19 @@ if st.button("Get Answer"):
     if user_question:
         # Show a spinner while the query is running
         with st.spinner("Searching for answers and generating a response..."):
-            # Call the function to get the answer from BigQuery
-            answer = get_rag_response_from_bigquery(user_question)
+            # Call the function to get the response from BigQuery
+            response = get_rag_response_from_bigquery(user_question)
             # Display the answer
             st.markdown("### Answer:")
-            st.markdown(answer)
+            st.markdown(response["generated_answer"])
+            
+            # Display top matching records
+            if response["top_matches"]:
+                st.markdown("### Top 3 Matching Records:")
+                # Convert to DataFrame for easy display
+                df_matches = pd.DataFrame(response["top_matches"])
+                st.dataframe(df_matches)
+            else:
+                st.info("No matching records found.")
     else:
         st.warning("Please enter a question.")
