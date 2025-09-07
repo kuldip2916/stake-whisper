@@ -82,17 +82,17 @@ def get_rag_response_from_bigquery(question: str):
                           prompt_generation AS (
                             SELECT
                               CONCAT(
-                                'You are an expert developer assistant. Your task is to answer the users question based STRICTLY and ONLY on the numbered context provided below. Do not use any other knowledge.\n',
-                                'Provide your answer in CLEAR MARKDOWN FORMAT.\n',
-                                'The answer must include:\n',
-                                '1. A one-sentence **Summary** of the solution.\n',
-                                '2. A numbered list of **Solution Steps**.\n',
-                                '3. A `python` formatted **Code Example** if applicable.\n',
-                                '4. **Cite your sources**. At the end of any sentence that uses information from a source, add the source ID, like this: [Source ID: 12345].\n\n',
-                                '---\n',
-                                'CONTEXT:\n',
-                                IFNULL(STRING_AGG(CONCAT('[Source ID: ', ticket_id, '] ', answer), '\n\n' ORDER BY distance ASC), 'No relevant context found.'),
-                                '\n---\n',
+                                'You are an expert developer assistant. Your task is to answer the users question based STRICTLY and ONLY on the numbered context provided below. Do not use any other knowledge.',
+                                'Provide your answer in CLEAR MARKDOWN FORMAT.',
+                                'The answer must include:',
+                                '1. A one-sentence **Summary** of the solution.',
+                                '2. A numbered list of **Solution Steps**.',
+                                '3. A `python` formatted **Code Example** if applicable.',
+                                '4. **Cite your sources**. At the end of any sentence that uses information from a source, add the source ID, like this: [Source ID: 12345].',
+                                '---',
+                                'CONTEXT:',
+                                IFNULL(STRING_AGG(CONCAT('[Source ID: ', ticket_id, '] ', answer), '' ORDER BY distance ASC), 'No relevant context found.'),
+                                '---',
                                 'QUESTION: ',
                                 new_question
                               ) AS prompt
