@@ -54,7 +54,7 @@ def get_rag_response_from_bigquery(question: str):
 
         # Your final, working SQL query, with a placeholder @new_question
         # for the user's input.
-        sql_query = sql_query = """
+        sql_query = """
                                 WITH
                           question_embedding AS (
                             SELECT
@@ -94,7 +94,7 @@ def get_rag_response_from_bigquery(question: str):
                                 IFNULL(STRING_AGG(CONCAT('[Source ID: ', ticket_id, '] ', answer), '' ORDER BY distance ASC), 'No relevant context found.'),
                                 '---',
                                 'QUESTION: ',
-                                new_question
+                                @new_question
                               ) AS prompt
                             FROM
                               retrieved_matches
