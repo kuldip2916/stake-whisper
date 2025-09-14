@@ -16,8 +16,9 @@ The application is deployed and publicly accessible using Streamlit Community Cl
 
 ### **[➡️ Click here to run the live app: https://stake-sage.streamlit.app/](https://stake-sage.streamlit.app/)**
 
-<img width="1600" height="879" alt="image" src="https://github.com/user-attachments/assets/2229ac30-834e-413b-a53f-2b05167bdbf2" />
-<img width="1592" height="239" alt="image" src="https://github.com/user-attachments/assets/d031e15b-311a-4f2f-b720-c967e47dd6e1" />
+<img width="1683" height="919" alt="image" src="https://github.com/user-attachments/assets/33aa93fb-7a6d-4f98-8c48-6d17a6f76ab9" />
+<img width="1683" height="919" alt="image" src="https://github.com/user-attachments/assets/6e239db8-2c69-415f-91b9-b82ac6515960" />
+
 
 
 ---
