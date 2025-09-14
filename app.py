@@ -148,11 +148,11 @@ def get_rag_response_from_bigquery(question: str):
 # --- Streamlit User Interface ---
 
 st.set_page_config(layout="wide")
-st.title("🐍 BigQuery Python RAG Assistant")
-st.write("Ask a question about Python, and I'll search for solutions in a Stack Overflow dataset stored in BigQuery.")
+st.title("Support Sentinel 🛡️ - A Stack Whisper")
+st.write("Ask a question about programming, and I'll search for solutions in a Stack Overflow dataset stored in BigQuery.")
 
 # Create a text input box for the user's question
-user_question = st.text_input("What is your Python question?", "")
+user_question = st.text_input("What is your question?", "")
 
 # Create a button to submit the question
 if st.button("Get Answer"):
