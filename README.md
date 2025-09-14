@@ -14,7 +14,7 @@ This project demonstrates a sophisticated, end-to-end Retrieval-Augmented Genera
 
 The application is deployed and publicly accessible using Streamlit Community Cloud.
 
-### **[➡️ Click here to run the live app: https://stake-sage.streamlit.app/](https://stake-sage.streamlit.app/)**
+### **➡️ Click here to run the live app [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://stake-whisper.streamlit.app/)**
 
 <img width="1683" height="919" alt="image" src="https://github.com/user-attachments/assets/33aa93fb-7a6d-4f98-8c48-6d17a6f76ab9" />
 <img width="1683" height="522" alt="image" src="https://github.com/user-attachments/assets/4711dd09-9dc0-46b4-8f54-53a602fa20ac" />
