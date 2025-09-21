@@ -12,7 +12,6 @@ os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "google_credentials.json"
 # --- BigQuery Function ---
 # Encapsulate all the BigQuery logic in a function for clarity and reusability
 
-@st.cache_data
 def get_rag_response_from_bigquery(question: str):
     """
     Sends a question to BigQuery, runs the RAG SQL query, and returns the answer.
@@ -158,8 +157,6 @@ user_question = st.text_input("What is your question?", "")
 # Create a button to submit the question
 if st.button("Get Answer"):
     if user_question:
-        # Reset feedback state on new question
-        st.session_state.feedback_given = False
         # Show a spinner while the query is running
         with st.spinner("Searching for answers and generating a response..."):
             # Call the function to get the response from BigQuery
@@ -168,21 +165,6 @@ if st.button("Get Answer"):
             st.markdown("### Answer:")
             st.markdown(response["generated_answer"])
             
-            # Add user feedback mechanism
-            if 'feedback_given' not in st.session_state:
-                st.session_state.feedback_given = False
-
-            if not st.session_state.feedback_given:
-                col1, col2, _ = st.columns([1, 1, 8])
-                with col1:
-                    if st.button("👍"):
-                        st.session_state.feedback_given = True
-                        st.success("Thank you for your feedback!")
-                with col2:
-                    if st.button("👎"):
-                        st.session_state.feedback_given = True
-                        st.success("Thank you for your feedback!")
-
             # Display top matching records
             if response["top_matches"]:
                 st.markdown("### Top 3 Matching Records:")
