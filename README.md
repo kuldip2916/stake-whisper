@@ -1,4 +1,4 @@
-# Support Sentinel 🛡️ - A Stack Whisper
+# Support Sentinel 🛡️ - A Stack Whisper 
 
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://stake-whisper.streamlit.app/)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
@@ -250,6 +250,9 @@ CREATE OR REPLACE VECTOR INDEX `stackoverflow_index`
 ON `project-id.kaggle.stackoverflow_with_embeddings`(embedding)
 OPTIONS(index_type='IVF', distance_type='COSINE', ivf_options='{"num_lists": 4000}');
 ```
+- **`index_type='IVF'`**: Chosen for speed. The Inverted File Index (IVF) provides a massive performance boost by intelligently searching a smaller subset of documents, which is essential for a real-time application.
+- **`distance_type='COSINE'`**: Selected for relevance. Cosine distance is the industry standard for comparing text embeddings because it measures semantic similarity by comparing the angle between vectors, which is how modern embedding models capture meaning.
+- **`ivf_options='{"num_lists": 4000}'`**: Chosen for balance. This value is set to the square root of our total number of documents (approx. 16 million). It creates a well-balanced index that is both fast to search and highly accurate.
 
 ### 5. The Final RAG Query
 
