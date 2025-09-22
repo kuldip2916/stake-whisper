@@ -45,16 +45,12 @@ def get_rag_response_from_bigquery(question: str):
         project_id = "master-booster-469602-q2"
         client = bigquery.Client(credentials=credentials, project=project_id)
 
-        # IMPORTANT: Use query parameters to prevent SQL injection!
-        # This is the secure way to pass user input into a query.
         job_config = bigquery.QueryJobConfig(
             query_parameters=[
                 bigquery.ScalarQueryParameter("new_question", "STRING", question)
             ]
         )
 
-        # Your final, working SQL query, with a placeholder @new_question
-        # for the user's input.
         sql_query = """
                                 WITH
                           question_embedding AS (
@@ -128,7 +124,7 @@ def get_rag_response_from_bigquery(question: str):
             return {
                 "generated_answer": row["generated_answer"],
                 "top_matches": row["top_matches"],
-                "full_model_response": row["full_model_response"]  # Optional, for debugging
+                "full_model_response": row["full_model_response"]  
             }
         
         # If no rows are returned
