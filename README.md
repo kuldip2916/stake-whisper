@@ -62,33 +62,58 @@ The application follows a classic RAG pattern, orchestrated entirely within Goog
 
 ```mermaid
 graph TD
-    subgraph "**User Interface (Streamlit)**"
+    %% Style Definitions for nodes
+    classDef ui fill:#e3f2fd,stroke:#64b5f6,stroke-width:2px,color:#333;
+    classDef bqai fill:#ede7f6,stroke:#9575cd,stroke-width:2px,color:#333;
+    classDef data fill:#e0f2f1,stroke:#4db6ac,stroke-width:2px,color:#333;
+    classDef result fill:#e8f5e9,stroke:#81c784,stroke-width:2px,color:#333;
+
+    subgraph "💡 **User Interface (Streamlit)**"
         A[User Enters Question]
     end
 
-    subgraph "BigQuery - AI Platform"
-        B["1. Embed User Question"]
-        C["2. Vector Search"]
-        D["3. Prompt Engineering"]
-        E["4. Generate Answer"]
+    subgraph "⚙️ **BigQuery - AI Platform**"
+        B[1. Embed User Question]
+        C[2. Vector Search]
+        D[3. Prompt Engineering]
+        E[4. Generate Answer]
     end
 
-    subgraph "Data & Models in BigQuery"
+    subgraph "📚 **Data & Models in BigQuery**"
         F["Stack Overflow Knowledge Base<br>with Embeddings"]
         G["BQML Embedding Model<br>(text-embedding-004)"]
         H["BQML Generation Model<br>(gemini-2.0-flash-001)"]
     end
 
+    I[✅ Answer Displayed to User]
+
+    %% Connection definitions (order matters for styling below)
     A --> B;
     B -- "Uses" --> G;
     B -- "Generates Question Vector" --> C;
     C -- "Searches in" --> F;
     C -- "Finds Top 3 Matches" --> D;
-    A -- "Original Question" --> D
+    A -- "Original Question" --> D;
     D -- "Builds Context-Rich Prompt" --> E;
     E -- "Uses" --> H;
-    E -- "Generates Final Answer & Citations" --> I[Answer Displayed to User];
-    A --> I
+    E -- "Generates Final Answer & Citations" --> I;
+    A --> I;
+
+    %% Assigning styles to the nodes
+    class A ui;
+    class B,C,D,E bqai;
+    class F,G,H data;
+    class I result;
+
+    %% Assigning styles to the connections (links are 0-indexed)
+    %% UI related links (blue)
+    linkStyle 0,5,9 stroke:#64b5f6,stroke-width:2px;
+    %% BQ AI internal process links (purple)
+    linkStyle 2,4,6 stroke:#9575cd,stroke-width:2px;
+    %% Data & Model interaction links (teal)
+    linkStyle 1,3,7 stroke:#4db6ac,stroke-width:2px;
+    %% Final result link (green)
+    linkStyle 8 stroke:#81c784,stroke-width:2px;
 
     
 
