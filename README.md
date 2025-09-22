@@ -29,10 +29,6 @@ The application is deployed and publicly accessible using Streamlit Community Cl
 <img width="1683" height="919" alt="image" src="https://github.com/user-attachments/assets/33aa93fb-7a6d-4f98-8c48-6d17a6f76ab9" />
 <img width="1683" height="522" alt="image" src="https://github.com/user-attachments/assets/4711dd09-9dc0-46b4-8f54-53a602fa20ac" />
 
-
-
-
-
 ---
 
 ## ✨ Features
@@ -118,6 +114,53 @@ graph TD
     
 
 ```
+---
+## 📈 Project Impact & Quantifiable Metrics
+
+The primary goal of Support Sentinel is to drastically reduce the time developers spend searching for solutions, thereby accelerating development cycles and saving significant operational costs.
+
+#### Estimated Time Saved: A Hypothetical Scenario
+
+Let's model the impact on a hypothetical team of **10 developers**:
+
+1.  **Baseline (Without Tool):** A developer encounters a complex technical issue. They spend an average of **20 minutes** searching Stack Overflow, reading multiple posts, and synthesizing an answer.
+2.  **With Support Sentinel:** The same developer asks the question in natural language. The tool provides a summarized, context-aware answer with code examples and direct source links in under **2 minutes**.
+
+* **Time Saved per Query:** 20 minutes - 2 minutes = **18 minutes**
+* **Daily Impact:** Assuming each developer faces just two such issues per day:
+    `10 developers * 2 queries/day * 18 minutes/query = 360 minutes/day`
+    This translates to **6 hours of developer time saved every day**.
+* **Weekly Impact:** Over a standard 5-day work week, the team saves **30 hours**.
+* **Annual Impact:** This amounts to over **1,500 hours saved per year**, effectively reclaiming the productivity of nearly one full-time engineer for the team.
+
+This solution makes a **large improvement** in its space by directly converting developer downtime into productive, value-adding work.
+---
+
+### 💡 What Makes This Approach Innovative?
+
+While Retrieval-Augmented Generation (RAG) is a known AI pattern, this project's innovation lies in its **radically simplified, data-centric implementation**. The entire pipeline is executed natively within BigQuery, showcasing a serverless, highly scalable approach that challenges traditional AI architectures.
+
+Key innovations include:
+
+* **Zero External Dependencies:** We avoided the complexity of external vector databases, separate orchestration scripts (like Python with LangChain), or dedicated microservices. The entire logic, from embedding to generation, is encapsulated in a single SQL query.
+* **Data Warehouse as the AI Engine:** This project treats the data warehouse not just as a repository for data, but as the central engine for a sophisticated AI application. This reduces data movement, enhances security, and simplifies the overall architecture.
+* **Accessibility for Data Professionals:** By keeping the entire logic in SQL, this solution becomes accessible to a wider audience of data analysts, engineers, and scientists who are already proficient in SQL, lowering the barrier to entry for building powerful AI tools.
+
+---
+
+## 🧠 How BigQuery AI is Used
+
+This project is a showcase of how to build a sophisticated, end-to-end AI application **entirely within the BigQuery ecosystem**. Every step of the AI/ML pipeline, from data transformation to final answer generation, is handled through BigQuery's native capabilities, demonstrating a truly serverless and integrated approach.
+
+Here’s a breakdown of the key BigQuery AI/ML tools used:
+
+* **BigQuery ML for Model Management**: Instead of managing separate API clients or infrastructure, we used BigQuery ML to register remote models. This allows us to treat powerful foundation models like `text-embedding-004` and `gemini-2.0-flash-001` as if they were native SQL functions, simplifying the entire workflow.
+
+* **`ML.GENERATE_EMBEDDING` for Feature Engineering**: We used this function to transform the entire Stack Overflow knowledge base into vector embeddings. This critical step converts text into a numerical format that the model can understand for semantic search, and BigQuery handles the batch processing and scaling effortlessly.
+
+* **`VECTOR_SEARCH` for Information Retrieval**: At the core of our RAG pipeline is BigQuery's native vector search capability. We first created a `VECTOR INDEX` to ensure low-latency performance. The `VECTOR_SEARCH` function then allows us to efficiently compare a user's question vector against millions of indexed solutions in real-time to retrieve the most relevant context.
+
+* **`ML.GENERATE_TEXT` for Generation**: The final step uses this function to call the registered Gemini model directly from our SQL query. We dynamically construct a detailed prompt, including the retrieved context, and `ML.GENERATE_TEXT` handles the interaction with the LLM to produce the final, structured answer for the user.
 
 ---
 
@@ -130,7 +173,7 @@ This project was built in a series of steps, all centered around BigQuery's cutt
 The knowledge base was created from the public `stackoverflow` dataset available in BigQuery. We curated a high-quality subset of questions and answers with the following query:
 
 ```sql
-CREATE OR REPLACE TABLE `your-gcp-project-id.kaggle.stackoverflow_qa` AS
+CREATE OR REPLACE TABLE `project-id.kaggle.stackoverflow_qa` AS
 WITH questions AS (
   SELECT id, title, body AS question_body, accepted_answer_id
   FROM `bigquery-public-data.stackoverflow.posts_questions`
@@ -159,8 +202,8 @@ Two core models were registered within our BigQuery dataset, allowing all AI ope
 We registered a remote model pointing to the `text-embedding-004` model, which is one of Google's latest and most powerful embedding models.
 
 ```sql
-CREATE OR REPLACE MODEL `your-gcp-project-id.kaggle.text_embedding_model`
-REMOTE WITH CONNECTION `your-gcp-project-id.us.vertexai`
+CREATE OR REPLACE MODEL `project-id.kaggle.text_embedding_model`
+REMOTE WITH CONNECTION `project-id.us.vertexai`
 OPTIONS (ENDPOINT = 'text-embedding-004');
 ```
 
@@ -168,8 +211,8 @@ OPTIONS (ENDPOINT = 'text-embedding-004');
 We registered another model that points to Google's powerful and cost-effective Gemini 2.0 Flash foundation model. This allows us to call Gemini directly from BigQuery without needing a separate API call.
 
 ```sql
-CREATE OR REPLACE MODEL `your-gcp-project-id.kaggle.gemini`
-REMOTE WITH CONNECTION `your-gcp-project-id.us.vertexai`
+CREATE OR REPLACE MODEL `project-id.kaggle.gemini`
+REMOTE WITH CONNECTION `project-id.us.vertexai`
 OPTIONS (ENDPOINT = 'gemini-2.0-flash-001');
 ```
 
@@ -178,7 +221,7 @@ OPTIONS (ENDPOINT = 'gemini-2.0-flash-001');
 We then generated embeddings for our entire dataset using our registered embedding model and stored them in a new table called `stackoverflow_with_embeddings`.
 
 ```sql
-CREATE OR REPLACE TABLE `your-gcp-project-id.kaggle.stackoverflow_with_embeddings` AS
+CREATE OR REPLACE TABLE `project-id.kaggle.stackoverflow_with_embeddings` AS
 SELECT
   ticket_id,
   problem_description,
@@ -186,14 +229,14 @@ SELECT
   ml_generate_embedding_result AS embedding
 FROM
   ML.GENERATE_EMBEDDING(
-    MODEL `your-gcp-project-id.kaggle.text_embedding_model`,
+    MODEL `project-id.kaggle.text_embedding_model`,
     (
       SELECT
         ticket_id,
         problem_description,
         resolution_text,
         problem_description AS content
-      FROM `your-gcp-project-id.kaggle.stackoverflow_qa`
+      FROM `project-id.kaggle.stackoverflow_qa`
     )
   );
 ```
@@ -204,7 +247,7 @@ To dramatically speed up the vector search, we created a vector index on the `em
 
 ```sql
 CREATE OR REPLACE VECTOR INDEX `stackoverflow_index`
-ON `your-gcp-project-id.kaggle.stackoverflow_with_embeddings`(embedding)
+ON `project-id.kaggle.stackoverflow_with_embeddings`(embedding)
 OPTIONS(index_type='IVF', distance_type='COSINE', ivf_options='{"num_lists": 4000}');
 ```
 
@@ -227,7 +270,7 @@ WITH
       p.ml_generate_embedding_result AS embedding
     FROM
       ML.GENERATE_EMBEDDING(
-        MODEL `your-gcp-project-id.kaggle.text_embedding_model`,
+        MODEL `project-id.kaggle.text_embedding_model`,
         (SELECT new_question AS content)
       ) AS p
   ),
@@ -239,7 +282,7 @@ WITH
       distance
     FROM
       VECTOR_SEARCH(
-        TABLE `your-gcp-project-id.kaggle.stackoverflow_with_embeddings`,
+        TABLE `project-id.kaggle.stackoverflow_with_embeddings`,
         'embedding',
         (SELECT embedding FROM question_embedding),
         top_k => 3
@@ -271,7 +314,7 @@ SELECT
   (SELECT ARRAY_AGG(STRUCT(ticket_id, question, answer) ORDER BY distance ASC) FROM retrieved_matches) AS top_matches
 FROM
   ML.GENERATE_TEXT(
-    MODEL `your-gcp-project-id.kaggle.gemini`,
+    MODEL `project-id.kaggle.gemini`,
     TABLE prompt_generation,
     STRUCT(
       8192 AS max_output_tokens,
@@ -323,7 +366,7 @@ To run this application on your own machine, follow these steps:
 
     [gcp_service_account]
     type = "service_account"
-    project_id = "your-gcp-project-id"
+    project_id = "project-id"
     private_key_id = "your-private-key-id"
     private_key = "-----BEGIN PRIVATE KEY-----\n...your-private-key...\n-----END PRIVATE KEY-----\n"
     client_email = "your-service-account-email"
@@ -339,3 +382,31 @@ To run this application on your own machine, follow these steps:
     ```bash
     streamlit run app.py
     ```
+---
+
+### Survey Responses
+
+* **Team Composition**: This project was developed by a one-person team.
+* **Team Member Experience**:
+    * **Months with BigQuery AI**: 2 months
+    * **Months with Google Cloud**: 30 months (2.5 years) as a Data Engineer
+
+### Feedback on the BigQuery AI Experience
+
+As a solo developer with a data engineering background, my experience using BigQuery AI for this hackathon was overwhelmingly positive. The ability to build a complete, sophisticated RAG application without leaving the BigQuery interface is a testament to the power of the platform.
+
+#### ✅ Positive Experiences & Strengths
+
+The **deep integration of AI/ML capabilities directly within BigQuery is a game-changer**. The ability to call embedding and generative models using simple SQL functions like `ML.GENERATE_EMBEDDING` and `ML.GENERATE_TEXT` removes significant engineering overhead. There's no need to set up separate microservices, manage API clients, or handle complex data pipelines between the data warehouse and an AI service. This streamlined workflow allowed me to focus entirely on the application logic and build a production-quality solution quickly.
+
+I've successfully used this pattern before to build a powerful internal log analysis tool. By feeding pre-processed logs into a Gemini model via a single SQL query, I was able to generate one-page summary reports for our engineering team. These reports detailed error statuses, suggested solutions, and outlined next steps, saving the team countless hours of manual log-checking. This hackathon project further solidified my view of how efficient and powerful this integrated approach is.
+
+#### 🤔 Friction Points & Suggestions
+
+My constructive feedback relates to documentation clarity for users who are new to the BigQuery AI ecosystem.
+
+While the functionality is incredibly powerful, the conceptual difference between creating a **remote model** that points to a Vertex AI endpoint (like Gemini) versus creating and training a **native BigQuery ML model** (like a regression model trained on table data) could be made clearer.
+
+When first starting, it wasn't immediately obvious why one would create a remote model "pointer" instead of a traditional BQML model. A simple diagram or a "choose your model path" decision tree in the documentation could be very helpful.
+
+---
